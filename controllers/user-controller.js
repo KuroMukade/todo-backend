@@ -8,6 +8,7 @@ const UserDto = require('../dtos/user-dto');
 const todoModel = require('../models/todo-model');
 const TodoDto = require('../dtos/todo-dto');
 const taskModel = require('../models/task-model');
+const userModel = require('../models/user-model');
 
 class UserController {
     async registration(req, res, next) {
@@ -84,8 +85,9 @@ class UserController {
             const accessToken = token.split(' ')[1];
 
             const userData = tokenService.validateAccessToken(accessToken);
-
-            return res.json(userData);
+            const user = await userModel.findById(userData.id);
+            const dtoUser = new UserDto(user);
+            return res.json(dtoUser);
         } catch (e) {
             next(e);
         }
@@ -119,17 +121,58 @@ class UserController {
             next(e);
         }
     }
-
     
+    async getTodos(req, res, next) {
+        try {
+            const token = req.headers.authorization;
+            const accessToken = token.split(' ')[1];
+            const userData = tokenService.validateAccessToken(accessToken);
+            const todos = await todoService.getTodo(userData.id);
+            if (todos.length === 0) {
+                throw ApiError.BadRequest('У пользователя еще нет туду');
+            }
+            return res.json(todos);
+        } catch (e) {
+            next(e);
+        }
+    }
+    
+    async getTodo(req, res, next) {
+        try {
+            const todoId = req.params.todoId;
+            if (!todoId) {
+                throw ApiError.BadRequest('Не указан туду id');
+            }
+            const todo = await todoModel.findById(todoId).populate('tasks');            
+            return res.json(todo);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async createTodo(req, res, next) {
         try {
             const { title } = req.body;
             const token = req.headers.authorization;
             const accessToken = token.split(' ')[1];
             const userData = tokenService.validateAccessToken(accessToken);
-            const newTodo = await todoService.createTodo(userData.id, title);
-            const dtoTodo = new TodoDto(newTodo)
-            return res.json(dtoTodo);
+
+            const todo = await todoService.createTodo(userData.id, title);
+            return res.json(todo);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async updateTodo(req, res, next) {
+        try {
+            const { title } = req.body;
+            const todoId = req.params.todoId;
+            if (!todoId) {
+                throw ApiError.BadRequest('Не указан todoId');
+            }
+            const updatedTodo = await todoService.updateTodo(todoId, title);
+            return res.json(updatedTodo);
         } catch (e) {
             next(e);
         }
@@ -137,39 +180,30 @@ class UserController {
 
     async deleteTodo(req, res, next) {
         try {
-            const { title } = req.body;
-            const token = req.headers.authorization;
-            const todoData = await todoService.deleteTodo(title, token);
-            return res.json(todoData);
+            const todoId = req.params.todoId;
+            const deletedTodo = await todoModel.findByIdAndRemove(todoId);
+            if (!deletedTodo) {
+                throw ApiError.BadRequest('Туду с таким id не найдена');
+            }
+            const userTodos = await todoModel.find({ user: deletedTodo.user });
+            return res.json(userTodos);
         } catch (e) {
             next(e);
         }
     }
 
-    async getTodos(req, res, next) {
-        try {
-            const token = req.headers.authorization;
-            const accessToken = token.split(' ')[1];
-            const userData = tokenService.validateAccessToken(accessToken);
-            const todos = await todoModel.find({ user: userData.id });
-            return res.json(todos);
-        } catch (e) {
-            next(e);
-        }
-    }
 
     async getTasks(req, res, next) {
         try {
-            const { todoId } = req.query;
+            const { todoId } = req.params;
             if (!todoId) {
-                throw ApiError.BadRequest('Не указан todoId');
+                throw ApiError.BadRequest('Не верный todoId');
             }
-            const task = await todoModel.findById(todoId);
-            if (!task) {
+            const todo = await todoModel.findById(todoId).populate('tasks');
+            if (!todo) {
                 throw ApiError.BadRequest('Не найдено такой todo');
             }
-            const tasks = await taskModel.find({ todo: todoId });
-            return res.json(tasks)
+            return res.json(todo.tasks);
         } catch (e) {
             next(e);
         }
@@ -182,14 +216,6 @@ class UserController {
                 throw ApiError.BadRequest('Не указан taskId');
             }
 
-
-            /**
- *             const token = req.headers.authorization;
-                const accessToken = token.split(' ')[1];
-                const userData = tokenService.validateAccessToken(accessToken);
-                const todos = await todoModel.find({ user: userData.id });
-                return res.json(todos);
-             */
             const tasks = await taskService.getTask(taskId);
             return res.json(tasks);
         } catch (e) {
@@ -200,14 +226,9 @@ class UserController {
     async createTask(req, res, next) {
         try {
             const { title, text, priority } = req.body;
-            const { todoId } = req.query;
-            const updatedTask = await taskService.createTask(
-                todoId,
-                title,
-                text,
-                priority,
-            );
-            return res.json(updatedTask);
+            const { todoId } = req.params;
+            const newTask = await taskService.createTask(todoId, title, text, priority);
+            return res.json(newTask);
         } catch (e) {
             next(e);
         }
@@ -216,7 +237,6 @@ class UserController {
     async updateTask(req, res, next) {
         try {
             const { title, text, priority, completed } = req.body;
-            const id = req.params.id;
             const taskId = req.query;
             const updatedTask = await taskService.updateTask(taskId, title, text, priority, completed);
             return res.json(updatedTask);

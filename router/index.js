@@ -18,12 +18,13 @@ router.get('/user', authMiddleware, userController.getUser);
 router.patch('/user', authMiddleware, userController.updateUser);
 
 router.get('/todos', authMiddleware, userController.getTodos);
+router.get('/todos/:todoId', authMiddleware, userController.getTodo);
 router.post('/todos', authMiddleware, userController.createTodo);
-// router.delete('/todos/:id', authMiddleware, userController.deleteTodo);
+router.put('/todos/:todoId', authMiddleware, userController.updateTodo);
+router.delete('/todos/:todoId', authMiddleware, userController.deleteTodo);
 
-router.get('/tasks', authMiddleware, userController.getTasks);
-router.post('/tasks', authMiddleware, userController.createTask);
-router.put('/tasks/:id', authMiddleware, userController.updateTask);
-// router.delete('/tasks/:id', authMiddleware, userController.deleteTask);
+router.get('/todos/:todoId/tasks', authMiddleware, userController.getTasks);
+router.post('/todos/:todoId/tasks', authMiddleware, userController.createTask);
+router.put('/todos/todoId/tasks', authMiddleware, userController.updateTask);
 
 module.exports = router

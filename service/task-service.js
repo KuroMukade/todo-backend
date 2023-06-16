@@ -19,14 +19,22 @@ class TaskService {
     }
 
     async createTask(todoId, title, text, priority) {
-        const task = await taskModel.create({
+        const newTask = new taskModel({
             title,
             text,
             priority: priority || 'LOW',
             todo: todoId,
         });
 
-        return task;
+        const createdTask = await newTask.save();
+
+        await todoModel.findByIdAndUpdate(
+            todoId,
+            { $push: { tasks: createdTask._id } },
+            { new: true },    
+        );
+
+        return createdTask;
     }
 
     async updateTask(taskId, title, text, priority, completed) {

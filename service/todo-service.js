@@ -12,14 +12,44 @@ class TodoService {
         return todos;
     }
 
+    async getTodo(userId) {
+        const user = await userModel.findById(userId).populate('todos');
+
+        console.log(user)
+
+        if (!user) {
+            throw ApiError.BadRequest('Не найдено пользовательских туду');
+        }
+
+        return user.todos;
+    }
+
     async createTodo(userId, title) {
-        console.log(title, userId)
-        const generatedTodo = await TodoModel.create({
-            user: userId,
+        const newTodo = new todoModel({
             title,
+            user: userId,
         });
 
-        return generatedTodo;
+        const createdTodo = await newTodo.save();
+
+        await userModel.findByIdAndUpdate(
+            userId,
+            { $push: { todos: createdTodo._id } },
+            { new: true }
+          );
+        
+        return createdTodo;
+    }
+
+    async updateTodo(todoId, title) {
+        const todo = await TodoModel.findById(todoId);
+        if (!todoId) {
+            throw ApiError.BadRequest('Не найдено туду с таким id');
+        }
+        todo.title = title || todo.title;
+
+        const updatedTodo = await todo.save();
+        return updatedTodo;
     }
 
     async deleteTodo(title, accessToken) {
