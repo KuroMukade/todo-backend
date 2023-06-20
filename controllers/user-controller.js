@@ -237,8 +237,14 @@ class UserController {
     async updateTask(req, res, next) {
         try {
             const { title, text, priority } = req.body;
-            const taskId = req.query;
-            const updatedTask = await taskService.updateTask(taskId, title, text, priority);
+            const taskId = req.query.taskId;
+            console.log(taskId)
+            // const updatedTask = await taskService.updateTask(taskId, title, text, priority);
+            const updatedTask = await taskModel.findByIdAndUpdate(taskId, {
+                title,
+                text,
+                priority,
+            }, {new: true});
             return res.json(updatedTask);
         } catch (e) {
             next(e);
