@@ -37,13 +37,12 @@ class TaskService {
         return createdTask;
     }
 
-    async updateTask(taskId, title, text, priority, completed) {
+    async updateTask(taskId, title, text) {
         const id = taskId.task;
         const task = await taskModel.findByIdAndUpdate(id, {
             title,
             text,
             priority,
-            completed
         });
         return task;
     }

@@ -236,10 +236,23 @@ class UserController {
 
     async updateTask(req, res, next) {
         try {
-            const { title, text, priority, completed } = req.body;
+            const { title, text, priority } = req.body;
             const taskId = req.query;
-            const updatedTask = await taskService.updateTask(taskId, title, text, priority, completed);
+            const updatedTask = await taskService.updateTask(taskId, title, text, priority);
             return res.json(updatedTask);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async deleteTask(req, res, next) {
+        try {
+            const todoId = req.params.todoId;
+            const taskId = req.params.taskId;
+
+            const deletedTodo = await taskModel.findByIdAndRemove(taskId);
+            console.log(deletedTodo);
+            return res.json(deletedTodo);
         } catch (e) {
             next(e);
         }

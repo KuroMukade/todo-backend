@@ -25,6 +25,7 @@ router.delete('/todos/:todoId', authMiddleware, userController.deleteTodo);
 
 router.get('/todos/:todoId/tasks', authMiddleware, userController.getTasks);
 router.post('/todos/:todoId/tasks', authMiddleware, userController.createTask);
-router.put('/todos/todoId/tasks', authMiddleware, userController.updateTask);
+router.put('/todos/:todoId/tasks', authMiddleware, userController.updateTask);
+router.delete('/todos/:todoId/:taskId', authMiddleware, userController.deleteTask);
 
 module.exports = router

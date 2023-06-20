@@ -18,10 +18,6 @@ const TaskSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Todo'
     },
-    completed: {
-        type: Boolean,
-        default: false
-    }
 });
 
 module.exports = model('Task', TaskSchema);
